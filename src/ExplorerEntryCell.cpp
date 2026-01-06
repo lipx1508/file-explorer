@@ -35,7 +35,7 @@ bool ExplorerEntryCell::init() {
     setContentSize({ 340.f, 20.f });
     
     const float cellPosY = getContentHeight() / 2.f + 1.f;
-    const auto  filename = m_path.name();
+    const auto  filename = toSmallFileName(m_path.name(), 32);
     
     auto nameText = CCLabelBMFont::create(filename.c_str(), "bigFont.fnt");
     nameText->setAnchorPoint({ .0f, .5f });
@@ -54,13 +54,11 @@ bool ExplorerEntryCell::init() {
     
     std::string infoString = "";
     
-    try {
-        if (m_path.isDir) {
-            infoString += std::format("{} files", countDirEntries(m_path.path));
-        } else {
-            infoString += toSizeString(std::filesystem::file_size(m_path.path));
-        }
-    } catch (...) {}
+    if (m_path.isDir) {
+        infoString += fmt::format("{} files", countDirEntries(m_path.path));
+    } else {
+        infoString += toSizeString(getFileSize(m_path.path));
+    }
     
     auto infoText = CCLabelBMFont::create(infoString.c_str(), "chatFont.fnt");
     infoText->setAnchorPoint({ .0f, .5f });

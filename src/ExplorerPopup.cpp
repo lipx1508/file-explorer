@@ -16,8 +16,6 @@ const char * PATH_FILTER = "!\\\"#$%&\'()*+,-./:;<=>?@[]^_`{|}~AaBbCcDdEeFfGgHhI
     Internals
    ========================================================- */
 
-// Reads and sorts a directory
-
 // Reads a directory and returns an error if it doesn't exist
 static std::vector<PathInfo> readDir(std::filesystem::path path, SortOptions options, bool ignoreDiag) {
     auto files = getDirFiles(path, options);
@@ -44,6 +42,7 @@ bool ExplorerPopup::setup(std::string const & value) {
     m_buttonMenu->ignoreAnchorPointForPosition(false);
     
     m_currentPath = (m_options.defaultPath ? m_options.defaultPath.value().parent_path() : HOME_PATH);
+    if (m_currentPath.empty()) m_currentPath = HOME_PATH;
     
     setupFrame();
     setupTop();
@@ -57,7 +56,7 @@ bool ExplorerPopup::setup(std::string const & value) {
     }
     
     if (m_fileName) {
-        m_fileName->setString(m_options.defaultPath ? m_options.defaultPath.value().filename().generic_string() : "");
+        m_fileName->setString(m_options.defaultPath ? utils::string::pathToString(m_options.defaultPath.value().filename()) : "");
     }
     
     m_setup = true;
@@ -122,6 +121,7 @@ void ExplorerPopup::setupTop() {
 }
 
 void ExplorerPopup::setupCenter() {
+#ifdef DEBUG
     // Adds the filter button
     auto filterSprite = IconButtonSprite::create(
         "GJ_button_01.png", 
@@ -136,6 +136,7 @@ void ExplorerPopup::setupCenter() {
     filterButton->setContentSize({ 40.f, 40.f });
     filterButton->updateSprite();
     m_buttonMenu->addChildAtPosition(filterButton, Anchor::Left, { 30.f, 0.f });
+#endif
 }
 
 void ExplorerPopup::setupBottom() {
@@ -178,7 +179,7 @@ void ExplorerPopup::setupBottom() {
 ExplorerEntryCell * ExplorerPopup::setupFileList(std::filesystem::path possiblePath) {
     ExplorerEntryCell * ret = nullptr;
     
-    m_pathInput->setString(m_currentPath.string());
+    m_pathInput->setString(utils::string::pathToString(m_currentPath));
     
     cue::resetNode(m_fileList);
     
@@ -216,7 +217,7 @@ void ExplorerPopup::selectCell(ExplorerEntryCell * cell) {
     }
     
     if (m_fileName) {
-        m_fileName->setString(cell->m_path.path.filename().string());
+        m_fileName->setString(utils::string::pathToString(cell->m_path.path.filename()));
     }
     m_selection.insert(cell);
     m_lastPick = cell;
@@ -269,7 +270,13 @@ void ExplorerPopup::onRefresh(CCObject *) {
 }
 
 void ExplorerPopup::onSearch(CCObject *) {
-    changeDir(std::filesystem::weakly_canonical(m_pathInput->getString()), m_options);
+    std::error_code e;
+    auto path = std::filesystem::weakly_canonical(m_pathInput->getString(), e);
+    if (e) {
+        Notification::create(e.message(), NotificationIcon::Error)->show();
+        return;
+    }
+    changeDir(path, m_options);
 }
 
 void ExplorerPopup::onReset(CCObject *) {
@@ -312,11 +319,14 @@ void ExplorerPopup::onFinish(CCObject *) {
                 Notification::create("Path is empty!", NotificationIcon::Error)->show();
                 return;
             }
-            if (std::filesystem::exists(path)) {
+            
+            std::error_code e;
+            if (std::filesystem::exists(path, e)) {
                 createQuickPopup(
                     "Confirmation", 
-                    std::format("Are you sure you want to replace \"{}\"?", toSmallFileName(v.unwrap().filename().generic_string())), 
-                    "No", "Yes", 
+                    std::format("Are you sure you want to replace \"{}\"?", 
+                        toSmallFileName(utils::string::pathToString(v.unwrap().filename()))
+                    ), "No", "Yes", 
                     [](auto, bool btn2) {
                         if (!btn2) return;
                         auto * popup = ExplorerPopup::get();

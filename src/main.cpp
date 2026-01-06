@@ -11,6 +11,7 @@ $execute {
     );
 }
 
+#ifdef DEBUG
 class $modify(PickerTestLayer, MenuLayer) {
     struct Fields {
         EventListener<PickTask> m_fileTaskEvent;
@@ -37,7 +38,6 @@ class $modify(PickerTestLayer, MenuLayer) {
         m_fields->m_fileTaskEvent.setFilter(utils::file::pick(file::PickMode::OpenFile, {}));
         m_fields->m_fileTaskEvent.bind([](PickTask::Event * event) {
             if (event->isCancelled()) {
-                log::info("shitass");
                 queueInMainThread([] {
                     FLAlertLayer::create(
                         "Title", "cancelled", "OK"
@@ -47,7 +47,7 @@ class $modify(PickerTestLayer, MenuLayer) {
             if (auto * value = event->getValue()) {
                 std::string str;
                 if (value->isOk()) {
-                    str = value->unwrap().generic_string();
+                    str = utils::string::pathToString(value->unwrap());
                 } else {
                     str = value->unwrapErr();
                 }
@@ -60,3 +60,4 @@ class $modify(PickerTestLayer, MenuLayer) {
         });
     }
 };
+#endif

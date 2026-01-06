@@ -5,6 +5,7 @@
 #include "Utils.h"
 
 #include <filesystem>
+#include <fstream>
 
 /* -========================================================
     Utils
@@ -23,29 +24,22 @@ PickerMode toPickerMode(file::PickMode mode) {
 
 Result<std::vector<PathInfo>> getDirFiles(const std::filesystem::path & path, SortOptions options) {
     // Check if it's actually a directory
-    if (!std::filesystem::is_directory(path))
+    std::error_code e;
+    if (!std::filesystem::is_directory(path, e))
         return Err("not a directory");
     
     // Iterates over all files within the directory
     std::vector<PathInfo> v;
-    for (const auto & e : std::filesystem::directory_iterator(path))
+    for (const auto & e : std::filesystem::directory_iterator(path, e))
         v.push_back(PathInfo(e.path()));
 
     // Sorts the files
     std::sort(v.begin(), v.end(), [&](const PathInfo & a, const PathInfo & b) {
-        constexpr auto rank = [](const PathInfo & f) {
-            const auto status = std::filesystem::status(f.path);
-            if (std::filesystem::is_directory(status))    return 0;
-            if (std::filesystem::is_regular_file(status)) return 1;
-            return 2;
-        };
+        std::error_code e;
     
         // Type
-        const int typeA = rank(a);
-        const int typeB = rank(b);
-
-        if (typeA != typeB) return typeA < typeB;
-            
+        if (a.isDir != b.isDir) return a.isDir == b.isDir;
+        
         // Extension (normal files)
         if (!a.isDir || !b.isDir) {
             const auto extA = a.extension();
@@ -57,7 +51,7 @@ Result<std::vector<PathInfo>> getDirFiles(const std::filesystem::path & path, So
             case SortMode::DATE:
                 return getFileDate(a.path) < getFileDate(b.path);
             case SortMode::SIZE:
-                return std::filesystem::file_size(a.path) < std::filesystem::file_size(b.path);
+                return getFileSize(a.path) < getFileSize(b.path);
             default:
                 return a.name() < b.name();
         }
@@ -67,10 +61,12 @@ Result<std::vector<PathInfo>> getDirFiles(const std::filesystem::path & path, So
 }
 
 size_t countDirEntries(const std::filesystem::path & path) {
+    std::error_code e;
+    
     size_t count = 0;
     try {
-        if (!std::filesystem::is_directory(path)) return 0;
-        for (const auto & _ : std::filesystem::directory_iterator(path))
+        if (!std::filesystem::is_directory(path, e)) return 0;
+        for (const auto & _ : std::filesystem::directory_iterator(path, e))
             ++count;
     } catch (...) {}
     return count;
@@ -78,22 +74,29 @@ size_t countDirEntries(const std::filesystem::path & path) {
 
 std::string toSizeString(uintmax_t size) {
     if (size >= 100000000000000000)
-        return std::format("{:.2f}PB", (double)size / 100000000000000000);
+        return fmt::format("{:.2f}PB", (double)size / 100000000000000000);
     if (size >= 10000000000000)
-        return std::format("{:.2f}TB", (double)size / 10000000000000);
+        return fmt::format("{:.2f}TB", (double)size / 10000000000000);
     if (size >= 1000000000)
-        return std::format("{:.2f}GB", (double)size / 1000000000);
+        return fmt::format("{:.2f}GB", (double)size / 1000000000);
     if (size >= 1000000)
-        return std::format("{:.2f}MB", (double)size / 1000000);
+        return fmt::format("{:.2f}MB", (double)size / 1000000);
     if (size >= 1000)
-        return std::format("{:.2f}KB", (double)size / 1000);
-    return std::format("{}B", size);
+        return fmt::format("{:.2f}KB", (double)size / 1000);
+    return fmt::format("{}B", size);
 }
 
-std::string toSmallFileName(std::string name) {
-    if (name.length() >= 13)
-        return name.substr(0, 13) + "...";
+std::string toSmallFileName(std::string name, int limit) {
+    if (name.length() >= limit - 3)
+        return name.substr(0, limit - 3) + "...";
     return name;
+}
+
+size_t getFileSize(const std::filesystem::path & path) {
+    std::error_code e;
+    size_t size = std::filesystem::file_size(path, e);
+    if (!e) return 0;
+    return size;
 }
 
 time_t getFileDate(const std::filesystem::path & path) {

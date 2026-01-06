@@ -7,7 +7,7 @@
 		"ios": "2.2074"
 	},
 	"id": "letaldev.file-explorer",
-	"name": "file-explorer",
+	"name": "File explorer",
 	"version": "v1.0.0",
 	"developer": "letaldev",
 	"description": "Replaces the file explorer with a built-in one that fits more the GD aesthetic",

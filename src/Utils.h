@@ -73,18 +73,19 @@ using namespace cocos2d;
     // Path information
     struct PathInfo {
         PathInfo() = default;
-        PathInfo(std::filesystem::path m_path) : 
-            path(m_path), isDir(std::filesystem::is_directory(m_path))
-        {}
+        PathInfo(std::filesystem::path m_path) : path(m_path) {
+            std::error_code e;
+            isDir = std::filesystem::is_directory(m_path, e);
+        }
         
         constexpr std::string name() const {
-            if (isDir) return path.filename().generic_string();
-            return path.stem().generic_string();
+            if (isDir) return utils::string::pathToString(path.filename());
+            return utils::string::pathToString(path.stem());
         }
         
         constexpr std::string extension() const {
             if (isDir) return "";
-            return path.extension().generic_string();
+            return utils::string::pathToString(path.extension());
         }
         
         std::filesystem::path path;
@@ -114,7 +115,10 @@ using namespace cocos2d;
     std::string toSizeString(uintmax_t size);
     
     // Makes a file name 16 characters max.
-    std::string toSmallFileName(std::string name);
+    std::string toSmallFileName(std::string name, int limit = 16);
+    
+    // Turns a size string from bytes to a human readable unit
+    size_t getFileSize(const std::filesystem::path & path);
     
     // Gets the last date that a file was written to
     time_t getFileDate(const std::filesystem::path & path);
