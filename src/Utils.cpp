@@ -95,7 +95,7 @@ std::string toSmallFileName(std::string name, int limit) {
 size_t getFileSize(const std::filesystem::path & path) {
     std::error_code e;
     size_t size = std::filesystem::file_size(path, e);
-    if (!e) return 0;
+    if (e) return 0;
     return size;
 }
 

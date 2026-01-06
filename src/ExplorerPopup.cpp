@@ -61,6 +61,8 @@ bool ExplorerPopup::setup(std::string const & value) {
     
     m_setup = true;
     
+    this->setID("explorer-popup"_spr);
+    
     return true;
 }
 
@@ -197,6 +199,8 @@ ExplorerEntryCell * ExplorerPopup::setupFileList(std::filesystem::path possibleP
             ret = cell;
     }
     
+    m_fileList->setID("explorer-file-list"_spr);
+    
     m_mainLayer->addChildAtPosition(m_fileList, geode::Anchor::Center);
     
     return ret;
@@ -284,7 +288,10 @@ void ExplorerPopup::onReset(CCObject *) {
 }
 
 void ExplorerPopup::onParent(CCObject *) {
-    changeDir(std::filesystem::absolute(m_currentPath).parent_path(), m_options);
+    std::error_code e;
+    auto path = std::filesystem::absolute(m_currentPath, e);
+    if (e) return;
+    changeDir(path.parent_path(), m_options);
 }
 
 void ExplorerPopup::onHome(CCObject *) {

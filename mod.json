@@ -13,5 +13,12 @@
 	"description": "Replaces the file explorer with a built-in one that fits more the GD aesthetic",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0"
-	}
+	}, 
+	"resources": {
+    "sprites": [
+      "previews/preview-1.png",
+      "resources/ss1.png",
+      "resources/ss2.png"
+    ]
+  }
 }
