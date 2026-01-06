@@ -8,7 +8,7 @@
 	},
 	"id": "letaldev.file-explorer",
 	"name": "File explorer",
-	"version": "v1.0.0",
+	"version": "v1.0.1",
 	"developer": "letaldev",
 	"description": "Replaces the file explorer with a built-in one that fits more the GD aesthetic",
 	"dependencies": {
