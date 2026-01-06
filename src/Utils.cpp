@@ -64,11 +64,9 @@ size_t countDirEntries(const std::filesystem::path & path) {
     std::error_code e;
     
     size_t count = 0;
-    try {
-        if (!std::filesystem::is_directory(path, e)) return 0;
-        for (const auto & _ : std::filesystem::directory_iterator(path, e))
-            ++count;
-    } catch (...) {}
+    if (!std::filesystem::is_directory(path, e)) return 0;
+    for (const auto & _ : std::filesystem::directory_iterator(path, e))
+        ++count;
     return count;
 }
 

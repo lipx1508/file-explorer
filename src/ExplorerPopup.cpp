@@ -254,12 +254,8 @@ Result<std::vector<std::filesystem::path>> ExplorerPopup::getFiles() {
 
 Result<std::filesystem::path> ExplorerPopup::getFile() {
     std::filesystem::path v;
-    try {
-        if (m_fileName)
-            v = (m_currentPath / std::filesystem::path(m_fileName->getString())).make_preferred();
-    } catch (const std::exception & e) {
-        return Err(e.what());
-    }
+    if (m_fileName)
+        v = (m_currentPath / std::filesystem::path(m_fileName->getString())).make_preferred();
     return Ok(v);
 }
 
@@ -331,7 +327,7 @@ void ExplorerPopup::onFinish(CCObject *) {
             if (std::filesystem::exists(path, e)) {
                 createQuickPopup(
                     "Confirmation", 
-                    std::format("Are you sure you want to replace \"{}\"?", 
+                    fmt::format("Are you sure you want to replace \"{}\"?", 
                         toSmallFileName(utils::string::pathToString(v.unwrap().filename()))
                     ), "No", "Yes", 
                     [](auto, bool btn2) {
